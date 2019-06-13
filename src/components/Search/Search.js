@@ -1,101 +1,106 @@
 import React, { Component } from 'react'
-import _ from 'lodash';
-import Logo from '../../logo'
+import { Link, Redirect } from 'react-router-dom'
+import _ from 'lodash'
 
+import Logo from '../logo'
 
-export default class Search extends Component {
-  state = {
-    value: '',
-    suggestion: []
-  }
+class Search extends Component {
+	state = {
+		value: '',
+		suggestion: [],
+		redirect: false
+	}
 
-  componentWillReceiveProps(props) {
-    this.setState({
-      suggestion: props.suggestion
-    })
-  }
+	componentWillReceiveProps(props) {
+		this.setState({
+			suggestion: props.suggestion
+		})
+	}
 
-  onHandleChange = e => {
-    this.setState({
-      value: e.target.value,
-      suggestion: []
-    })
-    this.getSuggest(this.state.value)
-  }
+	getSuggest = _.debounce(value => {
+		this.props.onSuggest(value)
+	}, 500)
 
-  getSuggest = _.debounce(value => {
-    this.props.onSuggest(value)
-  }, 300)
+	handleChange = ({ target: { value } }) => {
+		this.setState({
+			value,
+			suggestion: []
+		})
+		this.getSuggest(value)
+	}
 
-  onHandleSubmit = e => {
-    e.preventDefault()
-    this.props.onSearch(this.state.value)
-    this.setState({
-      suggestion: []
-    })
-  }
+	handleSubmit = e => {
+		e.preventDefault()
+		this.setState({
+			redirect: true,
+			suggestion: []
+		})
+	}
 
-  handleClickSuggestion = keyword => {
-    this.props.onSearch(keyword)
-    this.setState({
-      suggestion: []
-    })
-  }
+	render() {
+		const { value, suggestion, redirect } = this.state
+		const { children } = this.props
 
-  render() {
-    const { value, suggestion } = this.state
-    return (
-      <form onSubmit={this.onHandleSubmit}>
-        <div className='form-inline justify-content-center h-100' >
-          <label className='search'>
-            Search for repositories on &nbsp; <Logo /> &nbsp;&nbsp;
-          </label>
-          <div className='form-group dropdown'>
-            <input
-              type='text'
-              id='search'
-              name='search'
-              placeholder='@username...'
-              className='form-control'
-              autoComplete='off'
-              onChange={this.onHandleChange}
-            />
-            {
-              suggestion.length ? (
-                <div className="dropdown-menu w-100 show">
-                  {suggestion &&
-                    suggestion.map(
-                      (item, i) =>
-                        i < 10 && (
-                          <a
-                            href={`#${item.id}`}
-                            key={item.id}
-                            className="dropdown-item text-truncate px-3"
-                            onClick={() => this.handleClickSuggestion(item.login)}
-                          >
-                            <img
-                              className="rounded-circle mr-3"
-                              src={item.avatar_url}
-                              alt={item.login}
-                              height="30"
-                              width="30"
-                            />
-                            <span
-                              dangerouslySetInnerHTML={{
-                                __html: item.login.replace(
-                                  new RegExp(value, 'gi'),
-                                  str => `<b>${str}</b>`
-                                )
-                              }}
-                            />
-                          </a>
-                        )
-                    )}
-                </div>
-              ) : null}
-          </div>
-        </div>
-      </form>
-    )
-  }
+		if (redirect === true) {
+			return <Redirect to={`/user/${value}`} />
+		}
+		return (
+			<form
+				className='form-inline justify-content-center'
+				onSubmit={this.handleSubmit}
+			>
+				<label className='m-2'>
+					Search for repositories on
+					<a className='mx-2' href='https://github.com/'>
+						<Logo />
+					</a>
+					with:
+				</label>
+				<div className='form-group dropdown'>
+					<input
+						type='text'
+						name='q'
+						className='form-control'
+						autoComplete='off'
+						placeholder={children}
+						value={value}
+						onChange={this.handleChange}
+					/>
+					{suggestion.length ? (
+						<div className='dropdown-menu w-100 show'>
+							{suggestion &&
+								suggestion.map(
+									(item, i) =>
+										i < 10 && (
+											<Link
+												key={item.id}
+												className='dropdown-item text-truncate px-3'
+												to={`/user/${item.login}`}
+											>
+												<img
+													className='rounded-circle mr-3'
+													src={item.avatar_url}
+													alt={item.login}
+													height='30'
+													width='30'
+												/>
+												<span
+													dangerouslySetInnerHTML={{
+														__html: item.login.replace(
+															new RegExp(value, 'gi'),
+															str => `<b>${str}</b>`
+														)
+													}}
+												/>
+											</Link>
+										)
+								)}
+						</div>
+					) : null}
+				</div>
+			</form>
+		)
+	}
 }
+
+export default Search
