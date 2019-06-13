@@ -3,14 +3,17 @@ import { Link, withRouter } from 'react-router-dom'
 import axios from 'axios'
 
 import Alert from '../Alert'
+import Loadmore from '../Loadmore'
 import Loader from '../Loader'
 
 class User extends Component {
 	state = {
 		user: {},
 		repos: [],
+		reposPages: 0,
 		error: '',
-		loading: false
+		loading: false,
+		currentPage: 0
 	}
 
 	componentDidMount() {
@@ -22,7 +25,8 @@ class User extends Component {
 			.then(res =>
 				this.setState({
 					loading: false,
-					user: res.data
+					user: res.data,
+					reposPages: Math.ceil(res.data.public_repos / 30)
 				})
 			)
 			.catch(err =>
@@ -42,7 +46,8 @@ class User extends Component {
 			.then(res =>
 				this.setState({
 					loading: false,
-					repos: res.data
+					repos: res.data,
+					currentPage: 1
 				})
 			)
 			.catch(err =>
@@ -52,10 +57,31 @@ class User extends Component {
 				})
 			)
 	}
-	render() {
-		const { user, repos, error, loading } = this.state
-		let createdDate = new Date(user.created_at)
 
+	loadMoreRepos = () => {
+		const {currentPage, reposPages} = this.state
+		this.setState({
+			loading: true
+		})
+		currentPage < reposPages && axios
+      .get(`https://api.github.com/users/${this.props.match.params.id}/repos?page=${currentPage + 1}`)
+      .then(res => {
+				this.setState((prevState) => ({
+					currentPage: prevState.currentPage + 1,
+					repos: [...prevState.repos, ...res.data],
+					loading: !prevState.loading
+				}))
+      })
+      .catch(err => {
+        this.setState({
+					error: err.message
+				})
+      })
+  }
+
+	render() {
+		const { user, repos, error, loading, reposPages, currentPage } = this.state
+		let createdDate = new Date(user.created_at)
 		return (
 			<div>
 				<nav className='mb-5' aria-label='breadcrumb'>
@@ -104,24 +130,27 @@ class User extends Component {
 						</div>
 					</div>
 				) : null}
-				{repos ? (
-					<ul className='list-group text-left mb-5'>
-						{repos.map(item => (
-							<li
-								key={item.id}
-								href={item.html_url}
-								className='list-group-item'
-							>
-								<a href={item.html_url} className='h3 mb-0 text-info'>
-									{item.name}
-								</a>
-								<p className='mb-auto'>{item.description}</p>
-								<div className='mb-1 text-muted'>{item.language}</div>
-							</li>
-						))}
-					</ul>
+				{repos.length ? (
+					<div>
+						<ul className='list-group text-left mb-5'>
+							{repos.map(item => (
+								<li
+									key={item.id}
+									href={item.html_url}
+									className='list-group-item'
+								>
+									<a href={item.html_url} className='h3 mb-0 text-info'>
+										{item.name}
+									</a>
+									<p className='mb-auto'>{item.description}</p>
+									<div className='mb-1 text-muted'>{item.language}</div>
+								</li>
+							))}
+						</ul>
+					</div>
 				) : null}
 				{loading ? <Loader /> : null}
+				{currentPage < reposPages && repos.length ? <Loadmore onClick={this.loadMoreRepos}>Load more repositories</Loadmore> : null}
 			</div>
 		)
 	}
