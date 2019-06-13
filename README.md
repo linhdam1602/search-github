@@ -4,5 +4,6 @@ In the project directory, you can run:
 #npm start
 
 BUILD: 
+#npm i gh-pages --save
 #npm run build
-#npm run upload
+#npm run deploy

@@ -2,6 +2,7 @@
   "name": "search-github",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://linhdam1602.github.io/search-github",
   "dependencies": {
     "axios": "^0.19.0",
     "bootstrap": "^4.3.1",
@@ -13,7 +14,7 @@
     "react-scripts": "3.0.1"
   },
   "scripts": {
-    "start": "set PORT=5000 && react-scripts start",
+    "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
